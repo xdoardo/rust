@@ -456,21 +456,21 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                         // For rusty ABIs, small aggregates are actually passed
                         // as `RegKind::Integer` (see `FnAbi::adjust_for_abi`),
                         // so we re-use that same threshold here.
-                        layout.size() <= self.data_layout().pointer_size * 2
+                        layout.memrepr_size() <= self.data_layout().pointer_memrepr_size * 2
                     }
                 };
 
                 let a = args[0].immediate();
                 let b = args[1].immediate();
-                if layout.size().bytes() == 0 {
+                if layout.memrepr_size().bytes() == 0 {
                     self.const_bool(true)
                 } else if use_integer_compare {
-                    let integer_ty = self.type_ix(layout.size().bits());
+                    let integer_ty = self.type_ix(layout.memrepr_size().bits());
                     let a_val = self.load(integer_ty, a, layout.align().abi);
                     let b_val = self.load(integer_ty, b, layout.align().abi);
                     self.icmp(IntPredicate::IntEQ, a_val, b_val)
                 } else {
-                    let n = self.const_usize(layout.size().bytes());
+                    let n = self.const_usize(layout.memrepr_size().bytes());
                     let cmp = self.call_intrinsic("memcmp", &[], &[a, b, n]);
                     self.icmp(IntPredicate::IntEQ, cmp, self.const_int(self.type_int(), 0))
                 }
@@ -756,7 +756,7 @@ fn codegen_msvc_try<'ll, 'tcx>(
         //      }
         //
         // More information can be found in libstd's seh.rs implementation.
-        let ptr_size = bx.tcx().data_layout.pointer_size;
+        let ptr_size = bx.tcx().data_layout.pointer_memrepr_size;
         let ptr_align = bx.tcx().data_layout.pointer_align.abi;
         let slot = bx.alloca(ptr_size, ptr_align);
         let try_func_ty = bx.type_func(&[bx.type_ptr()], bx.type_void());
@@ -1029,7 +1029,7 @@ fn codegen_emcc_try<'ll, 'tcx>(
 
         // We need to pass two values to catch_func (ptr and is_rust_panic), so
         // create an alloca and pass a pointer to that.
-        let ptr_size = bx.tcx().data_layout.pointer_size;
+        let ptr_size = bx.tcx().data_layout.pointer_memrepr_size;
         let ptr_align = bx.tcx().data_layout.pointer_align.abi;
         let i8_align = bx.tcx().data_layout.i8_align.abi;
         // Required in order for there to be no padding between the fields.
@@ -1156,9 +1156,11 @@ fn generic_simd_intrinsic<'ll, 'tcx>(
     macro_rules! require_int_or_uint_ty {
         ($ty: expr, $diag: expr) => {
             match $ty {
-                ty::Int(i) => i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_size.bits()),
+                ty::Int(i) => {
+                    i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_data_size.bits())
+                }
                 ty::Uint(i) => {
-                    i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_size.bits())
+                    i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_data_size.bits())
                 }
                 _ => {
                     return_error!($diag);
@@ -2009,12 +2011,12 @@ fn generic_simd_intrinsic<'ll, 'tcx>(
                     args[0].immediate()
                 } else {
                     let bitwidth = match in_elem.kind() {
-                        ty::Int(i) => {
-                            i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_size.bits())
-                        }
-                        ty::Uint(i) => {
-                            i.bit_width().unwrap_or_else(|| bx.data_layout().pointer_size.bits())
-                        }
+                        ty::Int(i) => i
+                            .bit_width()
+                            .unwrap_or_else(|| bx.data_layout().pointer_memrepr_size.bits()),
+                        ty::Uint(i) => i
+                            .bit_width()
+                            .unwrap_or_else(|| bx.data_layout().pointer_memrepr_size.bits()),
                         _ => return_error!(InvalidMonomorphization::UnsupportedSymbol {
                             span,
                             name,
@@ -2189,11 +2191,11 @@ fn generic_simd_intrinsic<'ll, 'tcx>(
             // disallowed before here, so this unwrap is safe.
             ty::Int(i) => (
                 Style::Int(Signed),
-                i.normalize(bx.tcx().sess.target.pointer_width).bit_width().unwrap(),
+                i.normalize(bx.tcx().sess.target.pointer_data_size).bit_width().unwrap(),
             ),
             ty::Uint(u) => (
                 Style::Int(Unsigned),
-                u.normalize(bx.tcx().sess.target.pointer_width).bit_width().unwrap(),
+                u.normalize(bx.tcx().sess.target.pointer_data_size).bit_width().unwrap(),
             ),
             ty::Float(f) => (Style::Float, f.bit_width()),
             _ => (Style::Unsupported, 0),
@@ -2201,11 +2203,11 @@ fn generic_simd_intrinsic<'ll, 'tcx>(
         let (out_style, out_width) = match out_elem.kind() {
             ty::Int(i) => (
                 Style::Int(Signed),
-                i.normalize(bx.tcx().sess.target.pointer_width).bit_width().unwrap(),
+                i.normalize(bx.tcx().sess.target.pointer_data_size).bit_width().unwrap(),
             ),
             ty::Uint(u) => (
                 Style::Int(Unsigned),
-                u.normalize(bx.tcx().sess.target.pointer_width).bit_width().unwrap(),
+                u.normalize(bx.tcx().sess.target.pointer_data_size).bit_width().unwrap(),
             ),
             ty::Float(f) => (Style::Float, f.bit_width()),
             _ => (Style::Unsupported, 0),

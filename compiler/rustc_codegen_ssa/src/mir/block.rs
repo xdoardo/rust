@@ -1141,10 +1141,10 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                 (&mir::Operand::Copy(_), Ref(PlaceValue { llextra: None, .. }))
                 | (&mir::Operand::Constant(_), Ref(PlaceValue { llextra: None, .. })) => {
                     let tmp = PlaceRef::alloca(bx, op.layout);
-                    bx.lifetime_start(tmp.val.llval, tmp.layout.size);
+                    bx.lifetime_start(tmp.val.llval, tmp.layout.memrepr_size);
                     op.val.store(bx, tmp);
                     op.val = Ref(tmp.val);
-                    lifetime_ends_after_call.push((tmp.val.llval, tmp.layout.size));
+                    lifetime_ends_after_call.push((tmp.val.llval, tmp.layout.memrepr_size));
                 }
                 _ => {}
             }
@@ -1538,10 +1538,10 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                         Some(pointee_align) => cmp::max(pointee_align, arg.layout.align.abi),
                         None => arg.layout.align.abi,
                     };
-                    let scratch = PlaceValue::alloca(bx, arg.layout.size, required_align);
-                    bx.lifetime_start(scratch.llval, arg.layout.size);
+                    let scratch = PlaceValue::alloca(bx, arg.layout.memrepr_size, required_align);
+                    bx.lifetime_start(scratch.llval, arg.layout.memrepr_size);
                     op.val.store(bx, scratch.with_type(arg.layout));
-                    lifetime_ends_after_call.push((scratch.llval, arg.layout.size));
+                    lifetime_ends_after_call.push((scratch.llval, arg.layout.memrepr_size));
                     (scratch.llval, scratch.align, true)
                 }
                 PassMode::Cast { .. } => {
@@ -1561,10 +1561,11 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                         // For `foo(packed.large_field)`, and types with <4 byte alignment on x86,
                         // alignment requirements may be higher than the type's alignment, so copy
                         // to a higher-aligned alloca.
-                        let scratch = PlaceValue::alloca(bx, arg.layout.size, required_align);
-                        bx.lifetime_start(scratch.llval, arg.layout.size);
+                        let scratch =
+                            PlaceValue::alloca(bx, arg.layout.memrepr_size, required_align);
+                        bx.lifetime_start(scratch.llval, arg.layout.memrepr_size);
                         bx.typed_place_copy(scratch, op_place_val, op.layout);
-                        lifetime_ends_after_call.push((scratch.llval, arg.layout.size));
+                        lifetime_ends_after_call.push((scratch.llval, arg.layout.memrepr_size));
                         (scratch.llval, scratch.align, true)
                     } else {
                         (op_place_val.llval, op_place_val.align, true)
@@ -1603,7 +1604,8 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                 //   when passed by value, making it smaller.
                 // - On some ABIs, the Rust layout { u16, u16, u16 } may be padded up to 8 bytes
                 //   when passed by value, making it larger.
-                let copy_bytes = cmp::min(cast.unaligned_size(bx).bytes(), arg.layout.size.bytes());
+                let copy_bytes =
+                    cmp::min(cast.unaligned_size(bx).bytes(), arg.layout.memrepr_size.bytes());
                 // Allocate some scratch space...
                 let llscratch = bx.alloca(scratch_size, scratch_align);
                 bx.lifetime_start(llscratch, scratch_size);

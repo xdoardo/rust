@@ -1,5 +1,6 @@
 error: layout_of(MissingPayloadField) = Layout {
-           size: Size(2 bytes),
+           data_size: None,
+           memrepr_size: Size(2 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -49,7 +50,8 @@ error: layout_of(MissingPayloadField) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -86,7 +88,8 @@ error: layout_of(MissingPayloadField) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(1 bytes),
+                       data_size: None,
+                       memrepr_size: Size(1 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -118,7 +121,8 @@ LL | pub enum MissingPayloadField {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: layout_of(CommonPayloadField) = Layout {
-           size: Size(2 bytes),
+           data_size: None,
+           memrepr_size: Size(2 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -169,7 +173,8 @@ error: layout_of(CommonPayloadField) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -207,7 +212,8 @@ error: layout_of(CommonPayloadField) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -256,7 +262,8 @@ LL | pub enum CommonPayloadField {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: layout_of(CommonPayloadFieldIsMaybeUninit) = Layout {
-           size: Size(2 bytes),
+           data_size: None,
+           memrepr_size: Size(2 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -306,7 +313,8 @@ error: layout_of(CommonPayloadFieldIsMaybeUninit) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -343,7 +351,8 @@ error: layout_of(CommonPayloadFieldIsMaybeUninit) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -391,7 +400,8 @@ LL | pub enum CommonPayloadFieldIsMaybeUninit {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: layout_of(NicheFirst) = Layout {
-           size: Size(2 bytes),
+           data_size: None,
+           memrepr_size: Size(2 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -445,7 +455,8 @@ error: layout_of(NicheFirst) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -494,7 +505,10 @@ error: layout_of(NicheFirst) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -515,7 +529,10 @@ error: layout_of(NicheFirst) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -547,7 +564,8 @@ LL | pub enum NicheFirst {
    | ^^^^^^^^^^^^^^^^^^^
 
 error: layout_of(NicheSecond) = Layout {
-           size: Size(2 bytes),
+           data_size: None,
+           memrepr_size: Size(2 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -601,7 +619,8 @@ error: layout_of(NicheSecond) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(2 bytes),
+                       data_size: None,
+                       memrepr_size: Size(2 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -650,7 +669,10 @@ error: layout_of(NicheSecond) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -671,7 +693,10 @@ error: layout_of(NicheSecond) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },

@@ -330,7 +330,7 @@ fn prefix_and_suffix<'tcx>(
 fn wasm_functype<'tcx>(tcx: TyCtxt<'tcx>, fn_abi: &FnAbi<'tcx, Ty<'tcx>>) -> String {
     let mut signature = String::with_capacity(64);
 
-    let ptr_type = match tcx.data_layout.pointer_size.bits() {
+    let ptr_type = match tcx.data_layout.pointer_memrepr_size.bits() {
         32 => "i32",
         64 => "i64",
         other => bug!("wasm pointer size cannot be {other} bits"),
@@ -390,7 +390,7 @@ fn wasm_type<'tcx>(signature: &mut String, arg_abi: &ArgAbi<'_, Ty<'tcx>>, ptr_t
             // For wasm, Cast is used for single-field primitive wrappers like `struct Wrapper(i64);`
             assert!(!pad_i32, "not currently used by wasm calling convention");
             assert!(cast.prefix[0].is_none(), "no prefix");
-            assert_eq!(cast.rest.total, arg_abi.layout.size, "single item");
+            assert_eq!(cast.rest.total, arg_abi.layout.memrepr_size, "single item");
 
             let wrapped_wasm_type = match cast.rest.unit.kind {
                 RegKind::Integer => match cast.rest.unit.size.bytes() {

@@ -51,40 +51,40 @@ where
     match arg_layout.backend_repr {
         BackendRepr::Scalar(scalar) => match scalar.primitive() {
             Primitive::Int(..) | Primitive::Pointer(_) => {
-                if arg_layout.size.bits() > xlen {
+                if arg_layout.memrepr_size.bits() > xlen {
                     return Err(CannotUseFpConv);
                 }
                 match (*field1_kind, *field2_kind) {
                     (RegPassKind::Unknown, _) => {
                         *field1_kind = RegPassKind::Integer {
                             offset_from_start,
-                            ty: Reg { kind: RegKind::Integer, size: arg_layout.size },
+                            ty: Reg { kind: RegKind::Integer, size: arg_layout.memrepr_size },
                         };
                     }
                     (RegPassKind::Float { .. }, RegPassKind::Unknown) => {
                         *field2_kind = RegPassKind::Integer {
                             offset_from_start,
-                            ty: Reg { kind: RegKind::Integer, size: arg_layout.size },
+                            ty: Reg { kind: RegKind::Integer, size: arg_layout.memrepr_size },
                         };
                     }
                     _ => return Err(CannotUseFpConv),
                 }
             }
             Primitive::Float(_) => {
-                if arg_layout.size.bits() > flen {
+                if arg_layout.memrepr_size.bits() > flen {
                     return Err(CannotUseFpConv);
                 }
                 match (*field1_kind, *field2_kind) {
                     (RegPassKind::Unknown, _) => {
                         *field1_kind = RegPassKind::Float {
                             offset_from_start,
-                            ty: Reg { kind: RegKind::Float, size: arg_layout.size },
+                            ty: Reg { kind: RegKind::Float, size: arg_layout.memrepr_size },
                         };
                     }
                     (_, RegPassKind::Unknown) => {
                         *field2_kind = RegPassKind::Float {
                             offset_from_start,
-                            ty: Reg { kind: RegKind::Float, size: arg_layout.size },
+                            ty: Reg { kind: RegKind::Float, size: arg_layout.memrepr_size },
                         };
                     }
                     _ => return Err(CannotUseFpConv),
@@ -123,7 +123,7 @@ where
                         flen,
                         field1_kind,
                         field2_kind,
-                        offset_from_start + elem_layout.size * i,
+                        offset_from_start + elem_layout.memrepr_size * i,
                     )?;
                 }
             }
@@ -242,7 +242,7 @@ where
         return false;
     }
 
-    let total = arg.layout.size;
+    let total = arg.layout.memrepr_size;
 
     // "Scalars wider than 2✕XLEN are passed by reference and are replaced in
     // the argument list with the address."
@@ -327,7 +327,7 @@ fn classify_arg<'a, Ty, C>(
         }
     }
 
-    let total = arg.layout.size;
+    let total = arg.layout.memrepr_size;
     let align = arg.layout.align.abi.bits();
 
     // "Scalars wider than 2✕XLEN are passed by reference and are replaced in
@@ -418,7 +418,7 @@ where
         "ilp32d" | "lp64d" => 64,
         _ => 0,
     };
-    let xlen = cx.data_layout().pointer_size.bits();
+    let xlen = cx.data_layout().pointer_memrepr_size.bits();
 
     let mut avail_gprs = 8;
     let mut avail_fprs = 8;
@@ -448,7 +448,7 @@ where
     Ty: TyAbiInterface<'a, C> + Copy,
     C: HasDataLayout + HasTargetSpec,
 {
-    let xlen = cx.data_layout().pointer_size.bits();
+    let xlen = cx.data_layout().pointer_memrepr_size.bits();
 
     for arg in fn_abi.args.iter_mut() {
         if arg.is_ignore() {

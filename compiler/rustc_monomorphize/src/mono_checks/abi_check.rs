@@ -39,7 +39,7 @@ fn do_check_simd_vector_abi<'tcx>(
             || codegen_attrs.target_features.iter().any(|x| x.name == feat)
     };
     for arg_abi in abi.args.iter().chain(std::iter::once(&abi.ret)) {
-        let size = arg_abi.layout.size;
+        let size = arg_abi.layout.memrepr_size;
         if uses_vector_registers(&arg_abi.mode, &arg_abi.layout.backend_repr) {
             // Find the first feature that provides at least this vector size.
             let feature = match feature_def.iter().find(|(bits, _)| size.bits() <= *bits) {

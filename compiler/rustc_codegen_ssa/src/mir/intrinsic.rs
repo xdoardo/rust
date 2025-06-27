@@ -23,7 +23,7 @@ fn copy_intrinsic<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
     count: Bx::Value,
 ) {
     let layout = bx.layout_of(ty);
-    let size = layout.size;
+    let size = layout.memrepr_size;
     let align = layout.align.abi;
     let size = bx.mul(bx.const_usize(size.bytes()), count);
     let flags = if volatile { MemFlags::VOLATILE } else { MemFlags::empty() };
@@ -43,7 +43,7 @@ fn memset_intrinsic<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
     count: Bx::Value,
 ) {
     let layout = bx.layout_of(ty);
-    let size = layout.size;
+    let size = layout.memrepr_size;
     let align = layout.align.abi;
     let size = bx.mul(bx.const_usize(size.bytes()), count);
     let flags = if volatile { MemFlags::VOLATILE } else { MemFlags::empty() };
@@ -139,7 +139,8 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                 match name {
                     // Size is always <= isize::MAX.
                     sym::vtable_size => {
-                        let size_bound = bx.data_layout().ptr_sized_integer().signed_max() as u128;
+                        let size_bound =
+                            bx.data_layout().ptr_data_sized_integer().signed_max() as u128;
                         bx.range_metadata(value, WrappingRange { start: 0, end: size_bound });
                     }
                     // Alignment is always nonzero.
@@ -344,7 +345,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     bx.backend_type(layout),
                     source,
                     parse_atomic_ordering(ordering),
-                    layout.size,
+                    layout.memrepr_size,
                 )
             }
             sym::atomic_store => {
@@ -354,7 +355,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     return Ok(());
                 }
                 let ordering = fn_args.const_at(1).to_value();
-                let size = bx.layout_of(ty).size;
+                let size = bx.layout_of(ty).memrepr_size;
                 let val = args[1].immediate();
                 let ptr = args[0].immediate();
                 bx.atomic_store(val, ptr, parse_atomic_ordering(ordering), size);
@@ -479,7 +480,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
 
             sym::ptr_offset_from | sym::ptr_offset_from_unsigned => {
                 let ty = fn_args.type_at(0);
-                let pointee_size = bx.layout_of(ty).size;
+                let pointee_size = bx.layout_of(ty).memrepr_size;
 
                 let a = args[0].immediate();
                 let b = args[1].immediate();
@@ -529,10 +530,10 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
 fn int_type_width_signed(ty: Ty<'_>, tcx: TyCtxt<'_>) -> Option<(u64, bool)> {
     match ty.kind() {
         ty::Int(t) => {
-            Some((t.bit_width().unwrap_or(u64::from(tcx.sess.target.pointer_width)), true))
+            Some((t.bit_width().unwrap_or(u64::from(tcx.sess.target.pointer_memrepr_size)), true))
         }
         ty::Uint(t) => {
-            Some((t.bit_width().unwrap_or(u64::from(tcx.sess.target.pointer_width)), false))
+            Some((t.bit_width().unwrap_or(u64::from(tcx.sess.target.pointer_memrepr_size)), false))
         }
         _ => None,
     }

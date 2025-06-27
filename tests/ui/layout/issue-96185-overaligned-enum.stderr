@@ -1,5 +1,6 @@
 error: layout_of(Aligned1) = Layout {
-           size: Size(8 bytes),
+           data_size: None,
+           memrepr_size: Size(8 bytes),
            align: AbiAlign {
                abi: Align(8 bytes),
            },
@@ -37,7 +38,8 @@ error: layout_of(Aligned1) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(8 bytes),
+                       data_size: None,
+                       memrepr_size: Size(8 bytes),
                        align: AbiAlign {
                            abi: Align(8 bytes),
                        },
@@ -60,7 +62,8 @@ error: layout_of(Aligned1) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(8 bytes),
+                       data_size: None,
+                       memrepr_size: Size(8 bytes),
                        align: AbiAlign {
                            abi: Align(8 bytes),
                        },
@@ -96,7 +99,10 @@ LL | pub enum Aligned1 {
    | ^^^^^^^^^^^^^^^^^
 
 error: layout_of(Aligned2) = Layout {
-           size: Size(1 bytes),
+           data_size: Some(
+               Size(1 bytes),
+           ),
+           memrepr_size: Size(1 bytes),
            align: AbiAlign {
                abi: Align(1 bytes),
            },
@@ -140,7 +146,8 @@ error: layout_of(Aligned2) = Layout {
                tag_field: 0,
                variants: [
                    Layout {
-                       size: Size(1 bytes),
+                       data_size: None,
+                       memrepr_size: Size(1 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },
@@ -163,7 +170,8 @@ error: layout_of(Aligned2) = Layout {
                        randomization_seed: $SEED,
                    },
                    Layout {
-                       size: Size(1 bytes),
+                       data_size: None,
+                       memrepr_size: Size(1 bytes),
                        align: AbiAlign {
                            abi: Align(1 bytes),
                        },

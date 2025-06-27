@@ -108,11 +108,11 @@ fn emit_ptr_va_arg<'ll, 'tcx>(
     let (llty, size, align) = if indirect {
         (
             bx.cx.layout_of(Ty::new_imm_ptr(bx.cx.tcx, target_ty)).llvm_type(bx.cx),
-            bx.cx.data_layout().pointer_size,
+            bx.cx.data_layout().pointer_memrepr_size,
             bx.cx.data_layout().pointer_align,
         )
     } else {
-        (layout.llvm_type(bx.cx), layout.size, layout.align)
+        (layout.llvm_type(bx.cx), layout.memrepr_size, layout.align)
     };
     let (addr, addr_align) = emit_direct_ptr_va_arg(
         bx,
@@ -172,10 +172,10 @@ fn emit_aapcs_va_arg<'ll, 'tcx>(
 
     let gr_type = target_ty.is_any_ptr() || target_ty.is_integral();
     let (reg_off, reg_top, slot_size) = if gr_type {
-        let nreg = (layout.size.bytes() + 7) / 8;
+        let nreg = (layout.memrepr_size.bytes() + 7) / 8;
         (gr_offs, gr_top, nreg * 8)
     } else {
-        let nreg = (layout.size.bytes() + 15) / 16;
+        let nreg = (layout.memrepr_size.bytes() + 15) / 16;
         (vr_offs, vr_top, nreg * 16)
     };
 
@@ -208,9 +208,9 @@ fn emit_aapcs_va_arg<'ll, 'tcx>(
 
     // reg_value = *(@top + reg_off_v);
     let mut reg_addr = bx.ptradd(top, reg_off_v);
-    if bx.tcx().sess.target.endian == Endian::Big && layout.size.bytes() != slot_size {
+    if bx.tcx().sess.target.endian == Endian::Big && layout.memrepr_size.bytes() != slot_size {
         // On big-endian systems the value is right-aligned in its slot.
-        let offset = bx.const_i32((slot_size - layout.size.bytes()) as i32);
+        let offset = bx.const_i32((slot_size - layout.memrepr_size.bytes()) as i32);
         reg_addr = bx.ptradd(reg_addr, offset);
     }
     let reg_type = layout.llvm_type(bx);
@@ -340,9 +340,9 @@ fn emit_powerpc_va_arg<'ll, 'tcx>(
         let overflow_area_align = Align::from_bytes(4).unwrap();
 
         let size = if !is_indirect {
-            layout.layout.size.align_to(overflow_area_align)
+            layout.layout.memrepr_size.align_to(overflow_area_align)
         } else {
-            dl.pointer_size
+            dl.pointer_memrepr_size
         };
 
         let overflow_area_ptr = bx.inbounds_ptradd(va_list_addr, bx.cx.const_usize(1 + 1 + 2));
@@ -639,12 +639,12 @@ fn emit_x86_64_sysv64_va_arg<'ll, 'tcx>(
                     let reg_hi_addr = bx.inbounds_ptradd(reg_lo_addr, bx.const_i32(16));
 
                     let align = layout.layout.align().abi;
-                    let tmp = bx.alloca(layout.layout.size(), align);
+                    let tmp = bx.alloca(layout.layout.memrepr_size(), align);
 
                     let reg_lo = bx.load(ty_lo, reg_lo_addr, align_lo);
                     let reg_hi = bx.load(ty_hi, reg_hi_addr, align_hi);
 
-                    let offset = scalar1.size(bx.cx).align_to(align_hi).bytes();
+                    let offset = scalar1.memrepr_size(bx.cx).align_to(align_hi).bytes();
                     let field0 = tmp;
                     let field1 = bx.inbounds_ptradd(tmp, bx.const_u32(offset as u32));
 
@@ -662,12 +662,12 @@ fn emit_x86_64_sysv64_va_arg<'ll, 'tcx>(
                         Primitive::Int(_, _) | Primitive::Pointer(_) => (gp_addr, fp_addr),
                     };
 
-                    let tmp = bx.alloca(layout.layout.size(), layout.layout.align().abi);
+                    let tmp = bx.alloca(layout.layout.memrepr_size(), layout.layout.align().abi);
 
                     let reg_lo = bx.load(ty_lo, reg_lo_addr, align_lo);
                     let reg_hi = bx.load(ty_hi, reg_hi_addr, align_hi);
 
-                    let offset = scalar1.size(bx.cx).align_to(align_hi).bytes();
+                    let offset = scalar1.memrepr_size(bx.cx).align_to(align_hi).bytes();
                     let field0 = tmp;
                     let field1 = bx.inbounds_ptradd(tmp, bx.const_u32(offset as u32));
 
@@ -728,13 +728,13 @@ fn copy_to_temporary_if_more_aligned<'ll, 'tcx>(
     src_align: Align,
 ) -> &'ll Value {
     if layout.layout.align.abi > src_align {
-        let tmp = bx.alloca(layout.layout.size(), layout.layout.align().abi);
+        let tmp = bx.alloca(layout.layout.memrepr_size(), layout.layout.align().abi);
         bx.memcpy(
             tmp,
             layout.layout.align.abi,
             reg_addr,
             src_align,
-            bx.const_u32(layout.layout.size().bytes() as u32),
+            bx.const_u32(layout.layout.memrepr_size().bytes() as u32),
             MemFlags::empty(),
             rustc_codegen_ssa::common::PreserveCheriTags::Unknown,
         );
@@ -769,7 +769,7 @@ fn x86_64_sysv64_va_arg_from_memory<'ll, 'tcx>(
     // l->overflow_arg_area + sizeof(type).
     // AMD64-ABI 3.5.7p5: Step 10. Align l->overflow_arg_area upwards to
     // an 8 byte boundary.
-    let size_in_bytes = layout.layout.size().bytes();
+    let size_in_bytes = layout.layout.memrepr_size().bytes();
     let offset = bx.const_i32(size_in_bytes.next_multiple_of(8) as i32);
     let overflow_arg_area = bx.inbounds_ptradd(overflow_arg_area_v, offset);
     bx.store(overflow_arg_area, overflow_arg_area_ptr, dl.pointer_align.abi);
@@ -813,7 +813,7 @@ fn emit_xtensa_va_arg<'ll, 'tcx>(
     let offset = bx.load(bx.type_i32(), offset_ptr, bx.tcx().data_layout.i32_align.abi);
     let offset = round_up_to_alignment(bx, offset, layout.align.abi);
 
-    let slot_size = layout.size.align_to(Align::from_bytes(4).unwrap()).bytes() as i32;
+    let slot_size = layout.memrepr_size.align_to(Align::from_bytes(4).unwrap()).bytes() as i32;
 
     // Update the offset in va_list, by adding the slot's size.
     let offset_next = bx.add(offset, bx.const_i32(slot_size));

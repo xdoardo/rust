@@ -701,10 +701,11 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
     pub fn get_ptr_alloc<'a>(
         &'a self,
         ptr: Pointer<Option<M::Provenance>>,
-        size: Size,
+        data_size: Option<Size>,
+        memrepr_size: Size,
     ) -> InterpResult<'tcx, Option<AllocRef<'a, 'tcx, M::Provenance, M::AllocExtra, M::Bytes>>>
     {
-        let size_i64 = i64::try_from(size.bytes()).unwrap(); // it would be an error to even ask for more than isize::MAX bytes
+        let size_i64 = i64::try_from(memrepr_size.bytes()).unwrap(); // it would be an error to even ask for more than isize::MAX bytes
         let ptr_and_alloc = Self::check_and_deref_ptr(
             self,
             ptr,
@@ -725,7 +726,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         }
 
         if let Some((alloc_id, offset, prov, alloc)) = ptr_and_alloc {
-            let range = alloc_range(offset, size);
+            let range = alloc_range(offset, data_size, memrepr_size);
             if !self.memory.validation_in_progress.get() {
                 M::before_memory_read(
                     self.tcx,
@@ -800,13 +801,14 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
     pub fn get_ptr_alloc_mut<'a>(
         &'a mut self,
         ptr: Pointer<Option<M::Provenance>>,
-        size: Size,
+        data_size: Option<Size>,
+        memrepr_size: Size,
     ) -> InterpResult<'tcx, Option<AllocRefMut<'a, 'tcx, M::Provenance, M::AllocExtra, M::Bytes>>>
     {
         let tcx = self.tcx;
         let validation_in_progress = self.memory.validation_in_progress.get();
 
-        let size_i64 = i64::try_from(size.bytes()).unwrap(); // it would be an error to even ask for more than isize::MAX bytes
+        let size_i64 = i64::try_from(memrepr_size.bytes()).unwrap(); // it would be an error to even ask for more than isize::MAX bytes
         let ptr_and_alloc = Self::check_and_deref_ptr(
             self,
             ptr,
@@ -819,7 +821,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         )?;
 
         if let Some((alloc_id, offset, prov, alloc, machine)) = ptr_and_alloc {
-            let range = alloc_range(offset, size);
+            let range = alloc_range(offset, data_size, memrepr_size);
             if !validation_in_progress {
                 M::before_memory_write(
                     tcx,
@@ -1242,7 +1244,15 @@ impl<'a, 'tcx, Prov: Provenance, Extra, Bytes: AllocBytes>
 
     /// `offset` is relative to this allocation reference, not the base of the allocation.
     pub fn write_ptr_sized(&mut self, offset: Size, val: Scalar<Prov>) -> InterpResult<'tcx> {
-        self.write_scalar(alloc_range(offset, self.tcx.data_layout().pointer_size), val)
+        let data_layout = self.tcx.data_layout();
+        self.write_scalar(
+            alloc_range(
+                offset,
+                Some(data_layout.pointer_data_size),
+                data_layout.pointer_memrepr_size,
+            ),
+            val,
+        )
     }
 
     /// Mark the given sub-range (relative to this allocation reference) as uninitialized.
@@ -1293,8 +1303,13 @@ impl<'a, 'tcx, Prov: Provenance, Extra, Bytes: AllocBytes> AllocRef<'a, 'tcx, Pr
 
     /// `offset` is relative to this allocation reference, not the base of the allocation.
     pub fn read_pointer(&self, offset: Size) -> InterpResult<'tcx, Scalar<Prov>> {
+        let data_layout = self.tcx.data_layout();
         self.read_scalar(
-            alloc_range(offset, self.tcx.data_layout().pointer_size),
+            alloc_range(
+                offset,
+                Some(data_layout.pointer_data_size),
+                data_layout.pointer_memrepr_size,
+            ),
             /*read_provenance*/ true,
         )
     }
@@ -1321,9 +1336,10 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
     pub fn read_bytes_ptr_strip_provenance(
         &self,
         ptr: Pointer<Option<M::Provenance>>,
-        size: Size,
+        data_size: Option<Size>,
+        memrepr_size: Size,
     ) -> InterpResult<'tcx, &[u8]> {
-        let Some(alloc_ref) = self.get_ptr_alloc(ptr, size)? else {
+        let Some(alloc_ref) = self.get_ptr_alloc(ptr, data_size, memrepr_size)? else {
             // zero-sized access
             return interp_ok(&[]);
         };
@@ -1351,7 +1367,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         assert_eq!(lower, len, "can only write iterators with a precise length");
 
         let size = Size::from_bytes(len);
-        let Some(alloc_ref) = self.get_ptr_alloc_mut(ptr, size)? else {
+        let Some(alloc_ref) = self.get_ptr_alloc_mut(ptr, Some(size), size)? else {
             // zero-sized access
             assert_matches!(src.next(), None, "iterator said it was empty but returned an element");
             return interp_ok(());
@@ -1410,7 +1426,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
             return interp_ok(());
         };
         let src_alloc = self.get_alloc_raw(src_alloc_id)?;
-        let src_range = alloc_range(src_offset, size);
+        let src_range = alloc_range(src_offset, None, size);
         assert!(!self.memory.validation_in_progress.get(), "we can't be copying during validation");
         // For the overlapping case, it is crucial that we trigger the read hook
         // before the write hook -- the aliasing model cares about the order.
@@ -1444,7 +1460,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
 
         // Destination alloc preparations and access hooks.
         let (dest_alloc, extra) = self.get_alloc_raw_mut(dest_alloc_id)?;
-        let dest_range = alloc_range(dest_offset, size * num_copies);
+        let dest_range = alloc_range(dest_offset, None, size * num_copies);
         M::before_memory_write(
             tcx,
             extra,
@@ -1521,7 +1537,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
         // now fill in all the "init" data
         dest_alloc.init_mask_apply_copy(
             init,
-            alloc_range(dest_offset, size), // just a single copy (i.e., not full `dest_range`)
+            alloc_range(dest_offset, None, size), // just a single copy (i.e., not full `dest_range`)
             num_copies,
         );
         // copy the provenance to the destination

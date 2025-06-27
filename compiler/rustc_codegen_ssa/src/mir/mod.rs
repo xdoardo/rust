@@ -260,7 +260,7 @@ pub fn codegen_mir<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>>(
                     }
                     PassMode::Cast { ref cast, .. } => {
                         debug!("alloc: {:?} (return place) -> place", local);
-                        let size = cast.size(&start_bx).max(layout.size);
+                        let size = cast.size(&start_bx).max(layout.memrepr_size);
                         return LocalRef::Place(PlaceRef::alloca_size(&mut start_bx, size, layout));
                     }
                     _ => {}

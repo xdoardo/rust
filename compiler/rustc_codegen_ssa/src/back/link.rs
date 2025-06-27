@@ -3416,10 +3416,10 @@ fn warn_if_linked_with_gold(sess: &Session, path: &Path) -> Result<(), Box<dyn s
 
     let data = ReadCache::new(BufReader::new(File::open(path)?));
 
-    let was_linked_with_gold = if sess.target.pointer_width == 64 {
+    let was_linked_with_gold = if sess.target.pointer_memrepr_size == 64 {
         let elf = elf::FileHeader64::<Endianness>::parse(&data)?;
         elf_has_gold_version_note(elf, &data)?
-    } else if sess.target.pointer_width == 32 {
+    } else if sess.target.pointer_memrepr_size == 32 {
         let elf = elf::FileHeader32::<Endianness>::parse(&data)?;
         elf_has_gold_version_note(elf, &data)?
     } else {

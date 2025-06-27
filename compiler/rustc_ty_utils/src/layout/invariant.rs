@@ -8,10 +8,10 @@ use rustc_middle::ty::layout::{HasTyCtxt, LayoutCx, TyAndLayout};
 pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayout<'tcx>) {
     let tcx = cx.tcx();
 
-    if layout.size.bytes() % layout.align.abi.bytes() != 0 {
+    if layout.memrepr_size.bytes() % layout.align.abi.bytes() != 0 {
         bug!("size is not a multiple of align, in the following layout:\n{layout:#?}");
     }
-    if layout.size.bytes() >= tcx.data_layout.obj_size_bound() {
+    if layout.memrepr_size.bytes() >= tcx.data_layout.obj_size_bound() {
         bug!("size is too large, in the following layout:\n{layout:#?}");
     }
 
@@ -61,7 +61,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
         };
         if fields.next().is_none() {
             let (offset, first) = first;
-            if offset == Size::ZERO && first.layout.size() == layout.size {
+            if offset == Size::ZERO && first.layout.memrepr_size() == layout.memrepr_size {
                 // This is a newtype, so keep recursing.
                 // FIXME(RalfJung): I don't think it would be correct to do any checks for
                 // alignment here, so we don't. Is that correct?
@@ -85,7 +85,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
         }
         if let Some(size) = size {
             assert_eq!(
-                layout.layout.size(),
+                layout.layout.memrepr_size(),
                 size,
                 "size mismatch between ABI and layout in {layout:#?}"
             );
@@ -133,7 +133,10 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                             Size::ZERO,
                             "`Scalar` field at non-0 offset in {inner:#?}",
                         );
-                        assert_eq!(field.size, size, "`Scalar` field with bad size in {inner:#?}",);
+                        assert_eq!(
+                            field.memrepr_size, size,
+                            "`Scalar` field with bad size in {inner:#?}",
+                        );
                         assert_eq!(
                             field.align.abi, align,
                             "`Scalar` field with bad align in {inner:#?}",
@@ -197,9 +200,9 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                     (offset2, field2, offset1, field1)
                 };
                 // The fields should be at the right offset, and match the `scalar` layout.
-                let size1 = scalar1.size(cx);
+                let size1 = scalar1.memrepr_size(cx);
                 let align1 = scalar1.align(cx).abi;
-                let size2 = scalar2.size(cx);
+                let size2 = scalar2.memrepr_size(cx);
                 let align2 = scalar2.align(cx).abi;
                 assert_eq!(
                     offset1,
@@ -207,7 +210,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                     "`ScalarPair` first field at non-0 offset in {inner:#?}",
                 );
                 assert_eq!(
-                    field1.size, size1,
+                    field1.memrepr_size, size1,
                     "`ScalarPair` first field with bad size in {inner:#?}",
                 );
                 assert_eq!(
@@ -225,7 +228,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                     "`ScalarPair` second field at bad offset in {inner:#?}",
                 );
                 assert_eq!(
-                    field2.size, size2,
+                    field2.memrepr_size, size2,
                     "`ScalarPair` second field with bad size in {inner:#?}",
                 );
                 assert_eq!(
@@ -240,9 +243,9 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
             }
             BackendRepr::SimdVector { element, count } => {
                 let align = layout.align.abi;
-                let size = layout.size;
+                let size = layout.memrepr_size;
                 let element_align = element.align(cx).abi;
-                let element_size = element.size(cx);
+                let element_size = element.memrepr_size(cx);
                 // Currently, vectors must always be aligned to at least their elements:
                 assert!(align >= element_align);
                 // And the size has to be element * count plus alignment padding, of course
@@ -270,7 +273,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
             if let TagEncoding::Niche { niche_start, untagged_variant, niche_variants } =
                 tag_encoding
             {
-                let niche_size = tag.size(cx);
+                let niche_size = tag.memrepr_size(cx);
                 assert!(*niche_start <= niche_size.unsigned_int_max());
                 for (idx, variant) in variants.iter_enumerated() {
                     // Ensure all inhabited variants are accounted for.
@@ -284,11 +287,11 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                 assert_matches!(variant.variants, Variants::Single { .. });
                 // Variants should have the same or a smaller size as the full thing,
                 // and same for alignment.
-                if variant.size > layout.size {
+                if variant.memrepr_size > layout.memrepr_size {
                     bug!(
                         "Type with size {} bytes has variant with size {} bytes: {layout:#?}",
-                        layout.size.bytes(),
-                        variant.size.bytes(),
+                        layout.memrepr_size.bytes(),
+                        variant.memrepr_size.bytes(),
                     )
                 }
                 if variant.align.abi > layout.align.abi {
@@ -299,7 +302,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                     )
                 }
                 // Skip empty variants.
-                if variant.size == Size::ZERO
+                if variant.memrepr_size == Size::ZERO
                     || variant.fields.count() == 0
                     || variant.is_uninhabited()
                 {
@@ -312,7 +315,7 @@ pub(super) fn layout_sanity_check<'tcx>(cx: &LayoutCx<'tcx>, layout: &TyAndLayou
                 }
                 // The top-level ABI and the ABI of the variants should be coherent.
                 let scalar_coherent = |s1: Scalar, s2: Scalar| {
-                    s1.size(cx) == s2.size(cx) && s1.align(cx) == s2.align(cx)
+                    s1.memrepr_size(cx) == s2.memrepr_size(cx) && s1.align(cx) == s2.align(cx)
                 };
                 let abi_coherent = match (layout.backend_repr, variant.backend_repr) {
                     (BackendRepr::Scalar(s1), BackendRepr::Scalar(s2)) => scalar_coherent(s1, s2),

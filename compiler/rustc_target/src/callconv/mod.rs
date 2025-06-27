@@ -256,7 +256,7 @@ impl Uniform {
 ///
 /// Passing arguments in this mode works as follows: the registers in the `prefix` (the ones that
 /// are `Some`) get laid out one after the other (using `repr(C)` layout rules). Then the
-/// `rest.unit` register type gets repeated often enough to cover `rest.size`. This describes the
+/// `rest.unit` register type gets repeated often enough to cover `rest.memrepr_size`. This describes the
 /// actual type used for the call; the Rust type of the argument is then transmuted to this ABI type
 /// (and all data in the padding between the registers is dropped).
 #[derive(Clone, PartialEq, Eq, Hash, Debug, HashStable_Generic)]
@@ -387,7 +387,7 @@ impl<'a, Ty> ArgAbi<'a, Ty> {
             }
             BackendRepr::ScalarPair(a, b) => PassMode::Pair(
                 scalar_attrs(&layout, a, Size::ZERO),
-                scalar_attrs(&layout, b, a.size(cx).align_to(b.align(cx).abi)),
+                scalar_attrs(&layout, b, a.memrepr_size(cx).align_to(b.align(cx).abi)),
             ),
             BackendRepr::SimdVector { .. } => PassMode::Direct(ArgAttributes::new()),
             BackendRepr::Memory { .. } => Self::indirect_pass_mode(&layout),
@@ -406,7 +406,7 @@ impl<'a, Ty> ArgAbi<'a, Ty> {
             .set(ArgAttribute::NoCapture)
             .set(ArgAttribute::NonNull)
             .set(ArgAttribute::NoUndef);
-        attrs.pointee_size = layout.size;
+        attrs.pointee_size = layout.memrepr_size;
         attrs.pointee_align = Some(layout.align.abi);
 
         let meta_attrs = layout.is_unsized().then_some(ArgAttributes::new());
@@ -733,7 +733,8 @@ impl<'a, Ty> FnAbi<'a, Ty> {
             }
 
             if arg_idx.is_none()
-                && arg.layout.size > Primitive::Pointer(AddressSpace::DATA).size(cx) * 2
+                && arg.layout.memrepr_size
+                    > Primitive::Pointer(AddressSpace::DATA).memrepr_size(cx) * 2
                 && !matches!(arg.layout.backend_repr, BackendRepr::SimdVector { .. })
             {
                 // Return values larger than 2 registers using a return area
@@ -790,9 +791,9 @@ impl<'a, Ty> FnAbi<'a, Ty> {
                         matches!(arg.mode, PassMode::Indirect { on_stack: false, .. });
                     assert!(is_indirect_not_on_stack);
 
-                    let size = arg.layout.size;
+                    let size = arg.layout.memrepr_size;
                     if arg.layout.is_sized()
-                        && size <= Primitive::Pointer(AddressSpace::DATA).size(cx)
+                        && size <= Primitive::Pointer(AddressSpace::DATA).memrepr_size(cx)
                     {
                         // We want to pass small aggregates as immediates, but using
                         // an LLVM aggregate type for this leads to bad optimizations,

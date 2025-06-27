@@ -4,7 +4,10 @@ error: fn_abi_of(test) = FnAbi {
                    layout: TyAndLayout {
                        ty: u8,
                        layout: Layout {
-                           size: Size(1 bytes),
+                           data_size: Some(
+                               Size(1 bytes),
+                           ),
+                           memrepr_size: Size(1 bytes),
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -42,7 +45,10 @@ error: fn_abi_of(test) = FnAbi {
                layout: TyAndLayout {
                    ty: bool,
                    layout: Layout {
-                       size: Size(1 bytes),
+                       data_size: Some(
+                           Size(1 bytes),
+                       ),
+                       memrepr_size: Size(1 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -100,7 +106,10 @@ error: fn_abi_of(TestFnPtr) = FnAbi {
                    layout: TyAndLayout {
                        ty: bool,
                        layout: Layout {
-                           size: Size(1 bytes),
+                           data_size: Some(
+                               Size(1 bytes),
+                           ),
+                           memrepr_size: Size(1 bytes),
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -147,7 +156,10 @@ error: fn_abi_of(TestFnPtr) = FnAbi {
                layout: TyAndLayout {
                    ty: u8,
                    layout: Layout {
-                       size: Size(1 bytes),
+                       data_size: Some(
+                           Size(1 bytes),
+                       ),
+                       memrepr_size: Size(1 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -196,7 +208,10 @@ error: fn_abi_of(test_generic) = FnAbi {
                    layout: TyAndLayout {
                        ty: *const T,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(8 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -235,7 +250,10 @@ error: fn_abi_of(test_generic) = FnAbi {
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -281,7 +299,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: u8,
                        layout: Layout {
-                           size: Size(1 bytes),
+                           data_size: Some(
+                               Size(1 bytes),
+                           ),
+                           memrepr_size: Size(1 bytes),
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -319,7 +340,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -353,7 +377,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: u32,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(4 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -391,7 +418,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -431,7 +461,8 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: [u8; 32],
                        layout: Layout {
-                           size: Size(32 bytes),
+                           data_size: None,
+                           memrepr_size: Size(32 bytes),
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -470,7 +501,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -504,7 +538,8 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: [u32; 32],
                        layout: Layout {
-                           size: Size(128 bytes),
+                           data_size: None,
+                           memrepr_size: Size(128 bytes),
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -543,7 +578,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -583,7 +621,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: f32,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(4 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -620,7 +661,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -654,7 +698,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: u32,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(4 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -692,7 +739,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -732,7 +782,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: i32,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(4 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -770,7 +823,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -804,7 +860,10 @@ error: ABIs are not compatible
                    layout: TyAndLayout {
                        ty: u32,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(4 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -842,7 +901,10 @@ error: ABIs are not compatible
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
@@ -902,7 +964,10 @@ error: fn_abi_of(assoc_test) = FnAbi {
                    layout: TyAndLayout {
                        ty: &S,
                        layout: Layout {
-                           size: $SOME_SIZE,
+                           data_size: Some(
+                               Size(8 bytes),
+                           ),
+                           memrepr_size: $SOME_SIZE,
                            align: AbiAlign {
                                abi: $SOME_ALIGN,
                            },
@@ -953,7 +1018,10 @@ error: fn_abi_of(assoc_test) = FnAbi {
                layout: TyAndLayout {
                    ty: (),
                    layout: Layout {
-                       size: Size(0 bytes),
+                       data_size: Some(
+                           Size(0 bytes),
+                       ),
+                       memrepr_size: Size(0 bytes),
                        align: AbiAlign {
                            abi: $SOME_ALIGN,
                        },
