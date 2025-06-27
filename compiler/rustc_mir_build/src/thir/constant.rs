@@ -19,16 +19,28 @@ pub(crate) fn lit_to_const<'tcx>(
     }
 
     let trunc = |n, width: ty::UintTy| {
-        let width = width
-            .normalize(tcx.data_layout.pointer_size.bits().try_into().unwrap())
+        let memrepr_width = width
+            .normalize(tcx.data_layout.pointer_memrepr_size.bits().try_into().unwrap())
             .bit_width()
             .unwrap();
-        let width = Size::from_bits(width);
-        trace!("trunc {} with size {} and shift {}", n, width.bits(), 128 - width.bits());
-        let result = width.truncate(n);
+        let memrepr_width = Size::from_bits(memrepr_width);
+
+        let data_width = width
+            .normalize(tcx.data_layout.pointer_data_size.bits().try_into().unwrap())
+            .bit_width()
+            .unwrap();
+        let data_width = Size::from_bits(data_width);
+
+        trace!(
+            "trunc {} with size {} and shift {}",
+            n,
+            memrepr_width.bits(),
+            128 - memrepr_width.bits()
+        );
+        let result = memrepr_width.truncate(n);
         trace!("trunc result: {}", result);
 
-        ScalarInt::try_from_uint(result, width)
+        ScalarInt::try_from_uint(result, data_width, memrepr_width)
             .unwrap_or_else(|| bug!("expected to create ScalarInt from uint {:?}", result))
     };
 
