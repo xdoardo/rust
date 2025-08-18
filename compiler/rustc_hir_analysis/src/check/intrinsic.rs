@@ -143,6 +143,7 @@ fn intrinsic_operation_unsafety(tcx: TyCtxt<'_>, intrinsic_id: LocalDefId) -> hi
         | sym::cheri_type_get
         | sym::cheri_subset_test
         | sym::cheri_representable_alignment_mask
+        | sym::cheri_without_provenance
         | sym::cheri_round_representable_length => hir::Safety::Safe,
         _ => hir::Safety::Unsafe,
     };
@@ -691,9 +692,7 @@ pub(crate) fn check_intrinsic_type(
 
             /* CHERI intrinsics */
             sym::cheri_null_mut => (1, 0, vec![], Ty::new_mut_ptr(tcx, param(0))),
-            sym::cheri_without_provenance => {
-                (1, 0, vec![tcx.types.usize], Ty::new_mut_ptr(tcx, param(0)))
-            }
+            sym::cheri_without_provenance => (1, 0, vec![tcx.types.usize], Ty::new_mut_ptr(tcx, param(0))),
             sym::cheri_address_get => (1, 0, vec![param(0)], tcx.types.usize),
             sym::cheri_address_set => (1, 0, vec![param(0), tcx.types.usize], param(0)),
             sym::cheri_offset_increment => (1, 0, vec![param(0), tcx.types.usize], param(0)),

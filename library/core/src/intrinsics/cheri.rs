@@ -126,3 +126,9 @@ pub fn cheri_representable_alignment_mask(len: usize) -> usize;
 #[rustc_intrinsic]
 #[rustc_nounwind]
 pub fn cheri_round_representable_length(len: usize) -> usize;
+
+/// Create an (invalid) pointer from the given value.
+#[inline]
+#[rustc_intrinsic]
+#[rustc_nounwind]
+pub const fn cheri_without_provenance<T>(value: usize) -> *mut T;

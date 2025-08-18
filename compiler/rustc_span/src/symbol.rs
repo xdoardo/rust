@@ -650,6 +650,7 @@ symbols! {
         cheri_top_get,
         cheri_type_get,
         cheri_unseal,
+        cheri_without_provenance,
         cheriot_compartment,
         cheriot_mmio,
         cheriot_sealed_value,

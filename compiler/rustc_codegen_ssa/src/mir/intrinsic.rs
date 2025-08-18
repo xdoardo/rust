@@ -527,6 +527,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                 return Ok(());
             }
             sym::cheri_null_mut => bx.inttoptr(bx.const_usize(0), llret_ty),
+            sym::cheri_without_provenance => bx.inttoptr(args[0].immediate(), llret_ty),
             _ => {
                 // Need to use backend-specific things in the implementation.
                 return bx.codegen_intrinsic_call(instance, fn_abi, args, llresult, span);
