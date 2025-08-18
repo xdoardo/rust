@@ -463,6 +463,10 @@ impl<'tcx> interpret::Machine<'tcx> for CompileTimeMachine<'tcx> {
             // not the optimization stage.)
             sym::is_val_statically_known => ecx.write_scalar(Scalar::from_bool(false), dest)?,
             sym::cheri_null_mut => ecx.write_pointer(Pointer::null(), dest)?,
+            sym::cheri_without_provenance => {
+                let addr = ecx.read_scalar(&args[0])?.to_target_usize(ecx)?;
+                ecx.write_pointer(Pointer::from_addr_invalid(addr), dest)?
+            }
             _ => {
                 // We haven't handled the intrinsic, let's see if we can use a fallback body.
                 if ecx.tcx.intrinsic(instance.def_id()).unwrap().must_be_overridden {

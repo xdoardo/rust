@@ -666,13 +666,13 @@ pub const fn dangling<T>() -> *const T {
 #[must_use]
 #[stable(feature = "strict_provenance", since = "1.84.0")]
 #[rustc_const_stable(feature = "strict_provenance", since = "1.84.0")]
+#[rustc_allow_const_fn_unstable(core_intrinsics)]
 pub const fn without_provenance_mut<T>(addr: usize) -> *mut T {
     #[cfg(not(bootstrap))]
     {
         #[cfg(target_family = "cheri")]
         {
-            _ = addr;
-            panic!("CHERI requires strict provenance, and cant synthesize new pointers from usizes")
+            crate::intrinsics::cheri::cheri_without_provenance(addr)
         }
 
         #[cfg(not(target_family = "cheri"))]
