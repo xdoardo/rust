@@ -205,6 +205,8 @@
 #![feature(wasm_target_feature)]
 #![feature(x86_amx_intrinsics)]
 // tidy-alphabetical-end
+#![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheriot", feature(cheriot_compartment)))]
+#![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheriot", feature(abi_chericc)))]
 
 // allow using `core::` in intra-doc links
 #[allow(unused_extern_crates)]

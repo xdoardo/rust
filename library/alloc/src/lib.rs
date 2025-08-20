@@ -199,7 +199,12 @@
 // that the feature-gate isn't enabled. Ideally, it wouldn't check for the feature gate for docs
 // from other crates, but since this can only appear for lang items, it doesn't seem worth fixing.
 #![feature(intra_doc_pointers)]
+
+/* CHERI-specific features. */
 #![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheri", feature(non_null_from_ref)))]
+#![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheri", feature(cheri)))]
+#![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheriot", feature(cheriot_compartment)))]
+#![cfg_attr(not(bootstrap), cfg_attr(target_family = "cheriot", feature(abi_chericc)))]
 
 // Module with internal macros used by other modules (needs to be included before other modules).
 #[macro_use]
@@ -240,3 +245,12 @@ pub mod __export {
     pub use core::format_args;
     pub use core::hint::must_use;
 }
+
+#[cfg(not(bootstrap))]
+#[cfg(target_family = "cheri")]
+#[unstable(
+    feature = "cheri",
+    issue = "none",
+    reason = "support for CHERI has open design concerns"
+)]
+pub mod cheri;

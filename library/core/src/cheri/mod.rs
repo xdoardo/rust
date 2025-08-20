@@ -22,7 +22,7 @@ pub mod permissions;
 use permissions::PermissionSet;
 
 #[cfg(all(target_family = "cheriot", target_os = "cheriotrtos"))]
-pub mod seal;
+pub mod timeout;
 
 /// A capability is a concept specific to CHERI systems.
 /// In summary, it is a well-defined non-integral pointer.

@@ -1,20 +1,21 @@
 //! Software sealing of pointers in the CHERIoT-RTOS.
 
-use crate::cheri::timeout::Timeout;
-use crate::ffi::c_void;
+use core::cheri::timeout::Timeout;
+use core::ffi::c_void;
 
 unsafe extern "chericcallcc" {
     /// Dynamically create a new token.
     #[cheriot_compartment = "allocator"]
-    fn _Z13token_key_newv() -> *const c_void;
+    #[link_name = "_Z13token_key_newv"]
+    fn token_key_new() -> *const c_void;
 
-    // [todo](xdoardo): Move this to `alloc::cheri::cheriot`.
     /// Dynamically create a new sealed value.
     /// The return value is the sealed capability, while `unsealed` will contain a pointer to the
     /// allocated memory region.
     #[cheriot_compartment = "allocator"]
-    fn _Z27token_sealed_unsealed_allocP7TimeoutU19__sealed_capabilityP24AllocatorCapabilityStateP10SKeyStructjPPv(
-        timeout: &crate::cheri::timeout::Timeout,
+    #[link_name = "_Z27token_sealed_unsealed_allocP7TimeoutU19__sealed_capabilityP24AllocatorCapabilityStateP10SKeyStructjPPv"]
+    fn token_sealed_unsealed_alloc(
+        timeout: &core::cheri::timeout::Timeout,
         heap_capability: *const c_void,
         key: *const c_void,
         sz: usize,
@@ -23,7 +24,6 @@ unsafe extern "chericcallcc" {
 }
 
 unsafe extern "C" {
-    // [todo](xdoardo): Move this to `alloc::cheri::cheriot`.
     #[cheriot_static_sealed_value]
     static __default_malloc_capability: *const c_void;
 }
@@ -37,22 +37,22 @@ impl<T> Clone for SealedCapability<T> {
     }
 }
 
-impl<T> crate::fmt::Debug for SealedCapability<T> {
-    fn fmt(&self, f: &mut crate::fmt::Formatter<'_>) -> crate::fmt::Result {
-        write!(f, "SealedCapability<{}>(opaque)", crate::any::type_name_of_val(&self.0))
+impl<T> core::fmt::Debug for SealedCapability<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "SealedCapability<{}>(opaque)", core::any::type_name_of_val(&self.0))
     }
 }
 
 /// A sealing key.
 ///
 /// This kind of key can be used for software sealing only: passing this to
-/// [`crate::intrinsics::cheri::cheri_unseal`] will generate an invalid sealed pointer.
+/// [`core::intrinsics::cheri::cheri_unseal`] will generate an invalid sealed pointer.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct SealingKey(pub(self) *const ());
 
-impl crate::fmt::Debug for SealingKey {
-    fn fmt(&self, f: &mut crate::fmt::Formatter<'_>) -> crate::fmt::Result {
+impl core::fmt::Debug for SealingKey {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "sealing_key({:p})", self.0)
     }
 }
@@ -77,7 +77,7 @@ impl SealingKey {
     /// [`Option::None`].  This API is guaranteed never to block.
     #[inline(always)]
     pub fn try_new() -> Option<Self> {
-        let res = unsafe { _Z13token_key_newv() };
+        let res = unsafe { token_key_new() };
         if res.is_null() { None } else { Some(SealingKey(res as *const ())) }
     }
 }
@@ -91,11 +91,7 @@ pub struct Seal<T> {
     unsealed: *mut T,
 }
 
-// [todo](xdoardo): Move this to `alloc::cheri::cheriot`.
 impl<T> Seal<T> {
-
-    pub type DefaultSealingType = SealingKey<T>;
-
     /// Create a new [`Seal`].
     #[inline(always)]
     pub fn try_new<G: Fn() -> T>(key: SealingKey, generator: G) -> Option<Self> {
@@ -109,10 +105,10 @@ impl<T> Seal<T> {
         generator: G,
         timeout: Timeout,
     ) -> Option<Self> {
-        let mut unsealed: *mut T = crate::ptr::null_mut();
+        let mut unsealed: *mut T = core::ptr::null_mut();
         let sz = size_of::<T>();
         let sealed = unsafe {
-            _Z27token_sealed_unsealed_allocP7TimeoutU19__sealed_capabilityP24AllocatorCapabilityStateP10SKeyStructjPPv(
+            token_sealed_unsealed_alloc(
                 &timeout,
                 __default_malloc_capability,
                 key.0 as *const c_void,
@@ -126,7 +122,7 @@ impl<T> Seal<T> {
         } else {
             let value = generator();
             unsafe {
-                crate::ptr::copy_nonoverlapping(&value as *const T, unsealed, sz);
+                core::ptr::copy_nonoverlapping(&value as *const T, unsealed, sz);
             }
             let sealed = SealedCapability::<T>(sealed as *mut T);
             Some(Self { sealed, unsealed })
