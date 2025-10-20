@@ -705,7 +705,6 @@ pub(crate) fn check_intrinsic_type(
             sym::cheri_permissions_get => (1, 0, vec![param(0)], tcx.types.usize),
             sym::cheri_permissions_and => (1, 0, vec![param(0), tcx.types.usize], param(0)),
             sym::cheri_type_get => (1, 0, vec![param(0)], tcx.types.u32),
-            // from here
             sym::cheri_seal => (2, 0, vec![param(0), param(1)], param(0)),
             sym::cheri_unseal => (2, 0, vec![param(0), param(1)], param(0)),
             sym::cheri_bounds_set => (1, 0, vec![param(0), tcx.types.usize], param(0)),

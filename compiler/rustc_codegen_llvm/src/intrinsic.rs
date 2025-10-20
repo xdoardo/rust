@@ -602,7 +602,7 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 let width = size.bits();
                 self.call_intrinsic(
                     &format!("llvm.cheri.cap.equal.exact.i{width}"),
-                    &[args[0].immediate()],
+                    &[args[0].immediate(), args[1].immediate()],
                 )
             }
             sym::cheri_permissions_get => {
@@ -618,7 +618,7 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 let width = size.bits();
                 self.call_intrinsic(
                     &format!("llvm.cheri.cap.perms.and.i{width}"),
-                    &[args[0].immediate()],
+                    &[args[0].immediate(), args[1].immediate()],
                 )
             }
             sym::cheri_type_get => {
@@ -642,7 +642,7 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 let width = size.bits();
                 self.call_intrinsic(
                     &format!("llvm.cheri.cap.bounds.set.i{width}"),
-                    &[args[0].immediate()],
+                    &[args[0].immediate(), args[1].immediate()],
                 )
             }
             sym::cheri_bounds_set_exact => {
@@ -650,12 +650,13 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 let width = size.bits();
                 self.call_intrinsic(
                     &format!("llvm.cheri.cap.bounds.set.exact.i{width}"),
-                    &[args[0].immediate()],
+                    &[args[0].immediate(), args[1].immediate()],
                 )
             }
-            sym::cheri_subset_test => {
-                self.call_intrinsic("llvm.cheri.cap.subset.test", &[args[0].immediate()])
-            }
+            sym::cheri_subset_test => self.call_intrinsic(
+                "llvm.cheri.cap.subset.test",
+                &[args[0].immediate(), args[1].immediate()],
+            ),
             sym::cheri_representable_alignment_mask => {
                 let (size, _) = tcx.types.usize.int_size_and_signed(self.tcx);
                 let width = size.bits();
