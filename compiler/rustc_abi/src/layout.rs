@@ -562,7 +562,7 @@ impl<Cx: HasDataLayout> LayoutCalculator<Cx> {
         if is_special_no_niche {
             let hide_niches = |scalar: &mut _| match scalar {
                 Scalar::Initialized { value, valid_range } => {
-                    *valid_range = WrappingRange::full(value.memrepr_size(dl))
+                    *valid_range = WrappingRange::full(value.data_size(dl))
                 }
                 // Already doesn't have any niches
                 Scalar::Union { .. } => {}
@@ -1052,7 +1052,7 @@ impl<Cx: HasDataLayout> LayoutCalculator<Cx> {
             }
             if let Some((prim, offset)) = common_prim {
                 let prim_scalar = if common_prim_initialized_in_all_variants {
-                    let size = prim.memrepr_size(dl);
+                    let size = prim.data_size(dl);
                     assert!(size.bits() <= 128);
                     Scalar::Initialized { value: prim, valid_range: WrappingRange::full(size) }
                 } else {
