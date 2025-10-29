@@ -26,7 +26,7 @@ pub(crate) fn target() -> Target {
             cpu: "cheriot".into(),
             llvm_abiname: abi.into(),
             max_atomic_width: None,
-            atomic_cas: false,
+            atomic_cas: true,
             features: "+32bit,+c,+cap-mode,+e,+m,+xcheri,+zmmul".into(),
             panic_strategy: PanicStrategy::Abort,
             relocation_model: RelocModel::Static,
